@@ -694,6 +694,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
                 name=name,
                 columns=columns,
                 condition=' WHERE ' + condition,
+                deferrable=''
             ) if self.connection.features.supports_partial_indexes else None
         else:
             return Statement(
@@ -701,6 +702,7 @@ class DatabaseSchemaEditor(BaseDatabaseSchemaEditor):
                 table=table,
                 name=name,
                 columns=columns,
+                deferrable=''
             )
 
     def _create_index_sql(self, model, fields, *, name=None, suffix='', using='',
