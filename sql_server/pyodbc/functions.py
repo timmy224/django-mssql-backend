@@ -12,6 +12,34 @@ class TryCast(Cast):
     function = 'TRY_CAST'
 
 
+def sqlserver_as_sql(self, compiler, connection, template=None, **extra_context):
+    template = template or self.template
+    if connection.features.supports_order_by_nulls_modifier:
+        if self.nulls_last:
+            template = '%s NULLS LAST' % template
+        elif self.nulls_first:
+            template = '%s NULLS FIRST' % template
+    else:
+        if self.nulls_last and not (
+            self.descending and connection.features.order_by_nulls_first
+        ) and connection.features.supports_order_by_is_nulls:
+            template = '%%(expression)s IS NULL, %s' % template
+        elif self.nulls_first and not (
+            not self.descending and connection.features.order_by_nulls_first
+        ) and connection.features.supports_order_by_is_nulls:
+            template = '%%(expression)s IS NOT NULL, %s' % template
+    connection.ops.check_expression_support(self)
+    expression_sql, params = compiler.compile(self.expression)
+    placeholders = {
+        'expression': expression_sql,
+        'ordering': 'DESC' if self.descending else 'ASC',
+        **extra_context,
+    }
+    template = template or self.template
+    params *= template.count('%(expression)s')
+    return (template % placeholders).rstrip(), params
+
+
 def sqlserver_atan2(self, compiler, connection, **extra_context):
     return self.as_sql(compiler, connection, function='ATN2', **extra_context)
 
@@ -85,3 +113,4 @@ else:
     Exists.as_microsoft = sqlserver_exists
 
 OrderBy.as_microsoft = sqlserver_orderby
+OrderBy.as_sql = sqlserver_as_sql

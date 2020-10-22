@@ -34,6 +34,8 @@ class DatabaseFeatures(BaseDatabaseFeatures):
     supports_timezones = False
     supports_transactions = True
     uses_savepoints = True
+    supports_order_by_nulls_modifier = False
+    supports_order_by_is_nulls = False
 
     @cached_property
     def has_bulk_insert(self):
